@@ -1,0 +1,10 @@
+{
+  "name": "haptics",
+  "permissions": {
+    "android": ["android.permission.VIBRATE"],
+    "ios": {}
+  },
+  "methods": ["isAvailable", "impact", "notification", "selection", "vibrate", "cancel"],
+  "hooks": [],
+  "events": []
+}
