@@ -1,111 +1,134 @@
 # @wefterjs/haptics
 
-Official Wefter plugin for physical device haptic vibration feedback on Android & iOS.
-
----
+Official Wefter plugin for physical device haptic and vibration feedback on Android and iOS.
 
 ## Features
 
-- 📳 **Impact Feedback**: Triggers light, medium, or heavy physical impact haptics.
-- 🔔 **Notification Haptics**: Success, warning, and error haptic feedback sequences.
-- 🎯 **Selection Haptics**: Subtle haptic feedback for UI sliders, pickers, and toggles.
-- ⏱️ **Custom Vibrations**: Custom duration vibration motor feedback.
+- Check hardware presence and amplitude control support.
+- Trigger physical impact feedback with multiple styles (light, soft, medium, rigid, heavy).
+- Play standard notification haptic patterns (success, warning, error).
+- Trigger selection feedback for UI controls like wheels, pickers, and sliders.
+- Execute custom vibration patterns with timing and amplitude control.
+- Cancel active vibrations programmatically.
 
----
+## Installation and setup
 
-## Installation & Setup
-
-1. Add the plugin to your Wefter project:
+Install the plugin package in your Wefter application:
 
 ```bash
 wefter add @wefterjs/haptics
-```
-
-2. Synchronize native projects:
-
-```bash
 wefter sync
 ```
 
----
+### Native permissions
 
-## Native Permissions Configuration
+When synchronized:
 
-- **Android** (`AndroidManifest.xml`): Automatically requests `<uses-permission android:name="android.permission.VIBRATE" />`.
-- **iOS**: No permissions required (uses `UIImpactFeedbackGenerator` & `UINotificationFeedbackGenerator`).
+- Android automatically requests `<uses-permission android:name="android.permission.VIBRATE" />` in `AndroidManifest.xml`.
+- iOS requires no additional permissions.
 
----
+## JavaScript API reference
 
-## JavaScript API Reference
-
-Import `invokeNative` from `@wefterjs/core`:
+Import `Haptics` from `@wefterjs/haptics`:
 
 ```ts
-import { invokeNative } from "@wefterjs/core";
+import { Haptics } from "@wefterjs/haptics";
 ```
 
-### 1. `impact(options)`
-
-Triggers collision or impact haptic feedback.
+### Check hardware support
 
 ```ts
-type ImpactStyle = "light" | "medium" | "heavy";
-
-await invokeNative("haptics", "impact", { style: "medium" });
+const status = await Haptics.isAvailable();
+console.log("Haptics available:", status.available);
+console.log("Amplitude control:", status.amplitudeControlSupported);
 ```
 
-### 2. `notification(options)`
+### Impact feedback
 
-Triggers notification feedback haptics.
+Trigger physical impact feedback to accompany collisions, button presses, or gestures:
 
 ```ts
-type NotificationType = "success" | "warning" | "error";
-
-await invokeNative("haptics", "notification", { type: "success" });
+// Styles: "light", "soft", "medium", "rigid", or "heavy"
+await Haptics.impact({
+  style: "medium",
+  intensity: 0.8, // Optional normalized intensity between 0.0 and 1.0
+});
 ```
 
-### 3. `selection()`
+### Notification patterns
 
-Triggers subtle haptic feedback for UI selection changes (e.g. wheel picker, dropdown).
+Play feedback sequences indicating operation results:
 
 ```ts
-await invokeNative("haptics", "selection");
+// Types: "success", "warning", or "error"
+await Haptics.notification({ type: "success" });
 ```
 
-### 4. `vibrate(options)`
+### Selection feedback
 
-Triggers a custom duration vibration.
+Provide subtle tactile feedback when the user moves through items in a list, date picker, or carousel:
 
 ```ts
-interface VibrateOptions {
-  duration?: number; // Duration in milliseconds (default: 300ms)
+await Haptics.selection();
+```
+
+### Custom vibration patterns
+
+Play custom duration vibrations or timed pattern sequences:
+
+```ts
+// Single vibration for 300 milliseconds
+await Haptics.vibrate({ duration: 300 });
+
+// Pattern sequence with timing (alternating wait and vibrate ms)
+await Haptics.vibrate({
+  pattern: [0, 100, 50, 100], // wait 0ms, vibrate 100ms, wait 50ms, vibrate 100ms
+  amplitude: 128,             // 1 to 255 (Android only, ignored on devices without amplitude control)
+  repeat: false,
+});
+```
+
+### Cancel ongoing vibration
+
+Stop ongoing pattern vibrations immediately:
+
+```ts
+await Haptics.cancel();
+```
+
+## Complete usage example
+
+```ts
+import { Haptics } from "@wefterjs/haptics";
+
+export async function onButtonPressed() {
+  await Haptics.impact({ style: "light" });
 }
 
-await invokeNative("haptics", "vibrate", { duration: 500 });
-```
-
-### 5. `cancel()`
-
-Immediately stops active ongoing vibrations.
-
-```ts
-await invokeNative("haptics", "cancel");
-```
-
----
-
-## Complete Usage Example
-
-```ts
-import { invokeNative } from "@wefterjs/core";
-
-// Button click feedback
-export function onButtonClick() {
-  invokeNative("haptics", "impact", { style: "light" });
-}
-
-// Payment success feedback
-export function onPaymentSuccess() {
-  invokeNative("haptics", "notification", { type: "success" });
+export async function onPaymentCompleted(success: boolean) {
+  if (success) {
+    await Haptics.notification({ type: "success" });
+  } else {
+    await Haptics.notification({ type: "error" });
+  }
 }
 ```
+
+## Platform implementation notes
+
+### Android
+
+- Uses `android.os.Vibrator` or `android.os.VibratorManager` on Android 12 (API 31) and later.
+- Impact and notification patterns map to predefined `VibrationEffect` compositions (`EFFECT_CLICK`, `EFFECT_HEAVY_CLICK`, `EFFECT_TICK`).
+- Patterns and amplitude use `VibrationEffect.createWaveform`.
+
+### iOS
+
+- Impact uses `UIImpactFeedbackGenerator` with corresponding `UIImpactFeedbackGenerator.FeedbackStyle`.
+- Notification uses `UINotificationFeedbackGenerator`.
+- Selection uses `UISelectionFeedbackGenerator`.
+- Custom timing patterns fallback to `AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)`.
+
+## License
+
+[MIT](LICENSE) © 2026 Sandip Ghimire
