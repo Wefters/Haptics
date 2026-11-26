@@ -47,6 +47,7 @@ To test your plugin changes inside a live application:
 Android uses Vibrator, VibratorManager, and VibrationEffect. iOS uses UIFeedbackGenerator subclasses.
 
 When modifying native code:
+
 - Ensure asynchronous operations do not block the main UI thread.
 - Catch native exceptions and return descriptive bridge errors using the standardized error codes.
 - Do not add unnecessary third-party dependencies unless strictly required.

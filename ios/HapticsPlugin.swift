@@ -1,11 +1,13 @@
 import CoreHaptics
 import UIKit
 
+/// Haptic feedback with UIKit feedback generators, and custom vibrations and patterns with Core Haptics.
 final class HapticsPlugin: WefterPlugin {
 
     private var hapticEngine: CHHapticEngine?
     private var activePlayer: CHHapticPatternPlayer?
 
+    /// Whether the device supports Core Haptics. Intensity can always be controlled when it does.
     // @WefterMethod
     func isAvailable(payload: [String: Any], callback: @escaping (Result<Any, Error>) -> Void) throws {
         let supportsHaptics = CHHapticEngine.capabilitiesForHardware().supportsHaptics
@@ -15,6 +17,7 @@ final class HapticsPlugin: WefterPlugin {
         ])
     }
 
+    /// Plays an impact of the given style, at `intensity` when given.
     // @WefterMethod
     func impact(payload: [String: Any], callback: @escaping (Result<Any, Error>) -> Void) throws {
         let styleName = payload["style"] as? String ?? "medium"
@@ -33,6 +36,7 @@ final class HapticsPlugin: WefterPlugin {
         resolve(callback, data: ["played": true])
     }
 
+    /// Plays success, warning or error feedback.
     // @WefterMethod
     func notification(payload: [String: Any], callback: @escaping (Result<Any, Error>) -> Void) throws {
         let typeName = payload["type"] as? String ?? ""
@@ -47,6 +51,7 @@ final class HapticsPlugin: WefterPlugin {
         resolve(callback, data: ["played": true])
     }
 
+    /// Plays a selection tick.
     // @WefterMethod
     func selection(payload: [String: Any], callback: @escaping (Result<Any, Error>) -> Void) throws {
         let generator = UISelectionFeedbackGenerator()
@@ -55,6 +60,9 @@ final class HapticsPlugin: WefterPlugin {
         resolve(callback, data: ["played": true])
     }
 
+    /// Plays a continuous vibration of `duration` milliseconds, or a `pattern` of alternating wait and
+    /// vibrate
+    /// durations, optionally repeating.
     // @WefterMethod
     func vibrate(payload: [String: Any], callback: @escaping (Result<Any, Error>) -> Void) throws {
         let rawAmplitude = (payload["amplitude"] as? NSNumber)?.doubleValue ?? 1.0
@@ -85,6 +93,7 @@ final class HapticsPlugin: WefterPlugin {
         playPattern(timingsSeconds: [durationMs / 1000.0], amplitude: amplitude, repeats: false, callback: callback)
     }
 
+    /// Stops any vibration in progress.
     // @WefterMethod
     func cancel(payload: [String: Any], callback: @escaping (Result<Any, Error>) -> Void) throws {
         if let player = activePlayer {
@@ -94,6 +103,7 @@ final class HapticsPlugin: WefterPlugin {
         resolve(callback, data: ["cancelled": true])
     }
 
+    /// Plays a pattern on the haptic engine. Even entries are pauses and odd entries vibrations, in seconds.
     private func playPattern(timingsSeconds: [Double], amplitude: Float, repeats: Bool, callback: @escaping (Result<Any, Error>) -> Void) {
         guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else {
             reject(callback, code: "NOT_AVAILABLE", message: "This device does not support custom haptic patterns")
@@ -138,6 +148,7 @@ final class HapticsPlugin: WefterPlugin {
         }
     }
 
+    /// The Core Haptics engine, started on first use and restarted whenever the system stops or resets it.
     private func activeEngine() throws -> CHHapticEngine {
         if let engine = hapticEngine {
             return engine
@@ -155,6 +166,7 @@ final class HapticsPlugin: WefterPlugin {
         return engine
     }
 
+    /// UIKit impact style for a style name, or `nil` when unknown.
     private static func impactStyle(for name: String) -> UIImpactFeedbackGenerator.FeedbackStyle? {
         switch name {
         case "light": return .light
@@ -166,6 +178,7 @@ final class HapticsPlugin: WefterPlugin {
         }
     }
 
+    /// UIKit notification type for a type name, or `nil` when unknown.
     private static func notificationType(for name: String) -> UINotificationFeedbackGenerator.FeedbackType? {
         switch name {
         case "success": return .success

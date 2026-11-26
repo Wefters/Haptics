@@ -83,7 +83,7 @@ await Haptics.vibrate({ duration: 300 });
 // Pattern sequence with timing (alternating wait and vibrate ms)
 await Haptics.vibrate({
   pattern: [0, 100, 50, 100], // wait 0ms, vibrate 100ms, wait 50ms, vibrate 100ms
-  amplitude: 128,             // 1 to 255 (Android only, ignored on devices without amplitude control)
+  amplitude: 128, // 1 to 255 (Android only, ignored on devices without amplitude control)
   repeat: false,
 });
 ```

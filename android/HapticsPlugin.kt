@@ -7,6 +7,10 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import org.json.JSONObject
 
+/**
+ * Haptic feedback and vibration with the system `Vibrator`. Impacts and notifications are approximated with
+ * short one-shot vibrations, or predefined effects where the OS has them.
+ */
 class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         WefterPlugin(context, dispatcher) {
 
@@ -20,6 +24,7 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         }
     }
 
+    /** Whether the device can vibrate and whether it supports amplitude control. */
     @WefterMethod
     fun isAvailable(payload: JSONObject, callback: (Result<Any>) -> Unit) {
         val hasVibrator = vibrator.hasVibrator()
@@ -35,6 +40,7 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         )
     }
 
+    /** Plays a short vibration matching the impact style, or with an amplitude from `intensity`. */
     @WefterMethod
     fun impact(payload: JSONObject, callback: (Result<Any>) -> Unit) {
         val style = payload.optString("style", "medium")
@@ -76,6 +82,7 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         )
     }
 
+    /** Plays a success, warning or error vibration. */
     @WefterMethod
     fun notification(payload: JSONObject, callback: (Result<Any>) -> Unit) {
         when (payload.optString("type", "")) {
@@ -103,6 +110,7 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         }
     }
 
+    /** Plays a very short, light tick. */
     @WefterMethod
     fun selection(payload: JSONObject, callback: (Result<Any>) -> Unit) {
         val predefinedEffect =
@@ -116,6 +124,10 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         )
     }
 
+    /**
+     * Vibrates for `duration` milliseconds, or plays a `pattern` of alternating wait and vibrate durations,
+     * optionally repeating.
+     */
     @WefterMethod
     fun vibrate(payload: JSONObject, callback: (Result<Any>) -> Unit) {
         val amplitude =
@@ -159,12 +171,14 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         triggerVibration(callback, duration = duration, amplitude = amplitude)
     }
 
+    /** Stops any vibration in progress. */
     @WefterMethod
     fun cancel(payload: JSONObject, callback: (Result<Any>) -> Unit) {
         vibrator.cancel()
         resolve(callback, JSONObject().put("cancelled", true))
     }
 
+    /** Starts a one-shot or waveform vibration, falling back to the legacy API on old Android versions. */
     private fun triggerVibration(
             callback: (Result<Any>) -> Unit,
             duration: Long? = null,
@@ -216,12 +230,14 @@ class HapticsPlugin(context: Context, dispatcher: BridgeDispatcher) :
         }
     }
 
+    /** Converts an intensity from 0 to 1 to a vibration amplitude from 1 to 255. */
     private fun toAmplitude(intensity: Double): Int =
             (intensity.coerceIn(0.0, 1.0) * 254 + 1).toInt().coerceIn(1, 255)
 
     private data class ImpactPreset(val durationMs: Long, val amplitude: Int)
 
     companion object {
+        /** Duration and amplitude of each impact style. */
         private val IMPACT_PRESETS =
                 mapOf(
                         "light" to ImpactPreset(10L, 90),
